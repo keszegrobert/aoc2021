@@ -44,7 +44,7 @@ class Territory:
         #print('for',posy, posx, 'returning', inc)
         return inc
 
-    def update_neighbours(self, posy, posx):
+    def update_neighbours(self, posy, posx, queue):
         if self.table[posy*self.width+posx] < 10:
             return
         for ii in range(posy-1,posy+2):
@@ -60,36 +60,45 @@ class Territory:
                 if ii == posy and jj == posx:
                     continue
                 #print(ii,jj)
-                self.table[ii*self.width+jj] += 1
+                num = self.table[ii*self.width+jj]
+                self.table[ii*self.width+jj] = num + 1
+                if num + 1 == 10:
+                    queue.append((ii,jj))
 
     def step(self):
         p = self.table.copy()
-        self.print_table()
+        #self.print_table()
+
+        queue = []
 
         for i in range(self.height):
             for j in range(self.width):
                 p[i*self.width+j] += 1
+                if p[i*self.width+j] == 10:
+                    queue.append((i,j))
 
         self.table = p.copy()
-        print('After incrementing')
-        self.print_table()
+        #print('After incrementing')
+        #self.print_table()
 
-        for i in range(self.height):
-            for j in range(self.width):
-                self.update_neighbours(i, j)
+        while len(queue) > 0:
+            #print(queue)
+            i, j = queue.pop(0)
+            self.update_neighbours(i, j, queue)
 
-        print('After updating the neighbours')
-        self.print_table()
+        #print('After updating the neighbours')
+        #self.print_table()
 
         counter = 0
         for i in range(self.height):
             for j in range(self.width):
                 if self.table[i*self.width+j] > 9:
                     self.table[i*self.width+j] = 0
+                    counter += 1
 
-        print('After zeroing')
-        self.print_table()
-        return p
+        #print('After zeroing')
+        #self.print_table()
+        return counter
 
 terr = Territory(t, 5, 5)
 p = terr.step()
@@ -109,5 +118,13 @@ with open(sys.argv[1], "r") as f:
     print('WIDTH:', width)
     terr = Territory(territory, height, width)
     counter = 0
-    for i in range(2):
-        terr.step()
+    for i in range(1000):
+        flashes = terr.step()
+        if flashes == height*width:
+            print('synchronizing after:', i+1, 'flashes')
+            break
+        counter += flashes
+        if i == 9:
+            print('flashes after 10 steps:', counter)
+        if i == 99:
+            print('flashes after 100 steps:', counter)
